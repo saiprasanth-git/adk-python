@@ -381,7 +381,6 @@ class RestApiTool(BaseTool):
     # Move query params embedded in the path into query_params, since httpx
     # replaces (rather than merges) the URL query string when `params` is set.
     parsed_url = urlparse(url)
-    if parsed_url.query or parsed_url.fragment:
     for part in (parsed_url.query, parsed_url.fragment):
         if part:
             for key, values in parse_qs(part).items():
