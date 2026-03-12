@@ -1423,42 +1423,47 @@ class TestRestApiTool:
     request_params = tool._prepare_request_params([], {})
 
     assert request_params["url"] == "https://example.com/test"
-  def test_prepare_request_params_extracts_fragment_key_value_pairs(
+  def test_prepare_request_params_fragment_params_become_query_params(
     self, sample_auth_credential, sample_auth_scheme
   ):
-    """Fragment with key=value pairs should be parsed as query params.
-
-    When a URL fragment contains key=value pairs (e.g. #key=value),
-    they should be extracted and added to query_params, consistent with
-    how embedded query string params are handled.
-
-    Regression test for https://github.com/google/adk-python/issues/4598.
-    """
-    endpoint = OperationEndpoint(
-      base_url="https://example.com",
-      path="/api?triggerId=api_trigger/Name#action=POST",
-      method="GET",
+    # When the ApplicationIntegrationToolset builds an endpoint URL, it sometimes
+    # puts params in the fragment (e.g. #triggerId=my_trigger). Without this fix
+    # those params were silently dropped and the API returned a 400 error.
+    # See: https://github.com/google/adk-python/issues/4598
+    integration_endpoint = OperationEndpoint(
+      base_url="https://integrations.googleapis.com",
+      path=(
+        "/v2/projects/demo/locations/us-central1"
+        "/integrations/MyFlow:execute"
+        "?triggerId=api_trigger/MyFlow"
+        "#httpMethod=POST"
+      ),
+      method="POST",
     )
-    operation = Operation(operationId="test_op")
+    op = Operation(operationId="run_integration")
     tool = RestApiTool(
-      name="test_tool",
-      description="test",
-      endpoint=endpoint,
-      operation=operation,
+      name="run_integration",
+      description="Runs a Google Cloud integration flow",
+      endpoint=integration_endpoint,
+      operation=op,
       auth_credential=sample_auth_credential,
       auth_scheme=sample_auth_scheme,
     )
 
-    request_params = tool._prepare_request_params([], {})
+    result = tool._prepare_request_params([], {})
 
-    # Query string param must be extracted
-    assert request_params["params"]["triggerId"] == "api_trigger/Name"
-    # Fragment key=value pair must be extracted as a query param
-    assert request_params["params"]["action"] == "POST"
-    # The URL must NOT contain query string or fragment
-    assert "?" not in request_params["url"]
-    assert "#" not in request_params["url"]
-    assert request_params["url"] == "https://example.com/api"
+    # Both the query string and fragment params should land in query params
+    assert result["params"]["triggerId"] == "api_trigger/MyFlow"
+    assert result["params"]["httpMethod"] == "POST"
+
+    # The final URL should be clean — no leftover ? or #
+    assert "?" not in result["url"]
+    assert "#" not in result["url"]
+    assert result["url"] == (
+      "https://integrations.googleapis.com"
+      "/v2/projects/demo/locations/us-central1"
+      "/integrations/MyFlow:execute"
+    )
 
 
 def test_snake_to_lower_camel():
