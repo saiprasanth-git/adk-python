@@ -384,6 +384,9 @@ class RestApiTool(BaseTool):
     if parsed_url.query or parsed_url.fragment:
       for key, values in parse_qs(parsed_url.query).items():
         query_params.setdefault(key, values[0] if len(values) == 1 else values)
+      if parsed_url.fragment:
+        for key, values in parse_qs(parsed_url.fragment).items():
+          query_params.setdefault(key, values[0] if len(values) == 1 else values)
       url = urlunparse(parsed_url._replace(query="", fragment=""))
 
     # Construct body
