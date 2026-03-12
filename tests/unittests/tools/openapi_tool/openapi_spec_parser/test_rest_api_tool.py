@@ -1423,6 +1423,42 @@ class TestRestApiTool:
     request_params = tool._prepare_request_params([], {})
 
     assert request_params["url"] == "https://example.com/test"
+  def test_prepare_request_params_extracts_fragment_key_value_pairs(
+    self, sample_auth_credential, sample_auth_scheme
+  ):
+    """Fragment with key=value pairs should be parsed as query params.
+
+    When a URL fragment contains key=value pairs (e.g. #key=value),
+    they should be extracted and added to query_params, consistent with
+    how embedded query string params are handled.
+
+    Regression test for https://github.com/google/adk-python/issues/4598.
+    """
+    endpoint = OperationEndpoint(
+      base_url="https://example.com",
+      path="/api?triggerId=api_trigger/Name#action=POST",
+      method="GET",
+    )
+    operation = Operation(operationId="test_op")
+    tool = RestApiTool(
+      name="test_tool",
+      description="test",
+      endpoint=endpoint,
+      operation=operation,
+      auth_credential=sample_auth_credential,
+      auth_scheme=sample_auth_scheme,
+    )
+
+    request_params = tool._prepare_request_params([], {})
+
+    # Query string param must be extracted
+    assert request_params["params"]["triggerId"] == "api_trigger/Name"
+    # Fragment key=value pair must be extracted as a query param
+    assert request_params["params"]["action"] == "POST"
+    # The URL must NOT contain query string or fragment
+    assert "?" not in request_params["url"]
+    assert "#" not in request_params["url"]
+    assert request_params["url"] == "https://example.com/api"
 
 
 def test_snake_to_lower_camel():
