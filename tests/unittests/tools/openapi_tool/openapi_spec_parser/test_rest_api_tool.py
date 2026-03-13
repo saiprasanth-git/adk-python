@@ -1442,12 +1442,12 @@ class TestRestApiTool:
     )
     op = Operation(operationId="run_integration")
     tool = RestApiTool(
-      name="run_integration",
-      description="Runs a Google Cloud integration flow",
-      endpoint=integration_endpoint,
-      operation=op,
-      auth_credential=sample_auth_credential,
-      auth_scheme=sample_auth_scheme,
+          name="run_integration",
+          description="Runs a Google Cloud integration flow",
+          endpoint=integration_endpoint,
+          operation=op,
+          auth_credential=sample_auth_credential,
+          auth_scheme=sample_auth_scheme,
     )
 
     result = tool._prepare_request_params([], {})
@@ -1460,9 +1460,9 @@ class TestRestApiTool:
     assert "?" not in result["url"]
     assert "#" not in result["url"]
     assert result["url"] == (
-      "https://integrations.googleapis.com"
-      "/v2/projects/demo/locations/us-central1"
-      "/integrations/MyFlow:execute"
+          "https://integrations.googleapis.com"
+          "/v2/projects/demo/locations/us-central1"
+          "/integrations/MyFlow:execute"
     )
 
 
