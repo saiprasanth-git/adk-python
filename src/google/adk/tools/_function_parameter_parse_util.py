@@ -331,8 +331,8 @@ def _parse_schema_from_parameter(
         schema.default = param.default
       _raise_if_schema_unsupported(variant, schema)
       return schema
-        if origin is tuple:
-            schema.type = types.Type.ARRAY
+    if origin is tuple:
+        schema.type = types.Type.ARRAY
             if args:
                 if len(args) == 2 and args[1] is Ellipsis:
                     # variable-length tuple, e.g. tuple[int, ...]
