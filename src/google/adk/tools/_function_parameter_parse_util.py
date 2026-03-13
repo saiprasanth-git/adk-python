@@ -38,7 +38,8 @@ _py_builtin_type_to_schema_type = {
     float: types.Type.NUMBER,
     bool: types.Type.BOOLEAN,
     list: types.Type.ARRAY,
-    dict: types.Type.OBJECT,
+    dict: types.Type.OBJECT, 
+    tuple: types.Type.ARRAY,
     None: types.Type.NULL,
     # TODO requested google GenAI SDK to add a Type.ANY and do the mapping on
     # their side, once new enum is added, replace the below one with
@@ -330,6 +331,29 @@ def _parse_schema_from_parameter(
         schema.default = param.default
       _raise_if_schema_unsupported(variant, schema)
       return schema
+        if origin is tuple:
+            schema.type = types.Type.ARRAY
+            if args:
+                if len(args) == 2 and args[1] is Ellipsis:
+                    # variable-length tuple, e.g. tuple[int, ...]
+                    schema.items = _parse_schema_from_parameter(
+                        variant,
+                        inspect.Parameter(
+                            'item',
+                            inspect.Parameter.POSITIONAL_OR_KEYWORD,
+                            annotation=args[0],
+                        ),
+                        func_name,
+                    )
+                
+            if param.default is not inspect.Parameter.empty:
+                if not _is_default_value_compatible(
+                    param.default, param.annotation
+                ):
+                    raise ValueError(default_value_error_msg)
+                schema.default = param.default
+            _raise_if_schema_unsupported(variant, schema)
+            return schema
     if origin is Union:
       schema.any_of = []
       schema.type = types.Type.OBJECT
