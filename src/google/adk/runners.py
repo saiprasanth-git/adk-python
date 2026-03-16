@@ -699,7 +699,17 @@ class Runner:
             state_at_rewind_point[k] = v
 
     current_state = session.state
-    rewind_state_delta = {}
+# Collect all keys that ever appeared in ANY event's state_delta across
+    # the entire session. Keys present in current_state but absent from all
+    # event state_deltas are "initial state" (set via create_session) and
+    # must be preserved after a rewind.
+    keys_ever_in_event_deltas: set[str] = set()
+    for event in session.events:
+      if event.actions.state_delta:
+        for k in event.actions.state_delta:
+          if not k.startswith('app:') and not k.startswith('user:'):
+            keys_ever_in_event_deltas.add(k)
+        rewind_state_delta = {}
 
     # 1. Add/update keys in rewind_state_delta to match state_at_rewind_point.
     for key, value_at_rewind in state_at_rewind_point.items():
@@ -712,7 +722,7 @@ class Runner:
     for key in current_state:
       if key.startswith('app:') or key.startswith('user:'):
         continue
-      if key not in state_at_rewind_point:
+      if key not in state_at_rewind_point and key in keys_ever_in_event_deltas:
         rewind_state_delta[key] = None
 
     return rewind_state_delta
