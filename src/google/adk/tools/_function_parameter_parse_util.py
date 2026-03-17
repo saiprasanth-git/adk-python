@@ -346,14 +346,14 @@ def _parse_schema_from_parameter(
                         func_name,
                     )
                 
-        if param.default is not inspect.Parameter.empty:
-            if not _is_default_value_compatible(
-                param.default, param.annotation
-            ):
-                raise ValueError(default_value_error_msg)
-            schema.default = param.default
-            _raise_if_schema_unsupported(variant, schema)
-            return schema
+    if param.default is not inspect.Parameter.empty:
+        if not _is_default_value_compatible(
+            param.default, param.annotation
+        ):
+            raise ValueError(default_value_error_msg)
+        schema.default = param.default
+        _raise_if_schema_unsupported(variant, schema)
+        return schema
     if origin is Union:
       schema.any_of = []
       schema.type = types.Type.OBJECT
